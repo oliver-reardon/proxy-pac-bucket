@@ -1,0 +1,26 @@
+formatter: markdown
+header-from: ../.header.md
+output-file: README.md
+output-mode: replace   
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - inputs
+    - outputs
+    - resources
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
