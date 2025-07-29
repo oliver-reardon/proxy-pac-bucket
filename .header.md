@@ -4,7 +4,7 @@ This Terraform setup creates a secure, scalable infrastructure for hosting and d
 
 ### Update the docs:
 ```bash
-cd proxy-pac-bucket-name
+cd proxy-pac-bucket
 
 # Format your Terraform files (default: terraform/ folder)
 make fmt
