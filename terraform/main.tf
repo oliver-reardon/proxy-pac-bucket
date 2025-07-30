@@ -3,12 +3,12 @@ resource "aws_s3_bucket" "my_bucket" {
   bucket = "${var.project_name}-bucket" # bucket name based on provided variable
 }
 
-# Upload PAC File to S3 Bucket
-resource "aws_s3_object" "pac_file" {
+# Upload object to S3 Bucket
+resource "aws_s3_object" "pac_config" {
   bucket        = aws_s3_bucket.my_bucket.id # Target the created S3 bucket
   key           = "pac_config.js"            # Object key (file name in S3)
   source        = "pac_config.js"            # Local file to upload
-  content_type  = "application/x-javascript-config"  # Modern PAC MIME type
+  content_type  = "application/javascript"   # set content type
   cache_control = "no-cache"                 # Ensure it's served correctly by CloudFront
 }
 
@@ -46,35 +46,6 @@ resource "aws_s3_bucket_policy" "oac_policy" {
   })
 }
 
-# CloudFront Response Headers Policy for CORS
-resource "aws_cloudfront_response_headers_policy" "cors_policy" {
-  name    = "${var.project_name}-cors-policy"
-  comment = "CORS policy for PAC file distribution"
-
-  cors_config {
-    access_control_allow_credentials = false
-    access_control_allow_headers {
-      items = ["*"]
-    }
-    access_control_allow_methods {
-      items = ["GET", "HEAD", "OPTIONS"]
-    }
-    access_control_allow_origins {
-      items = ["*"]
-    }
-    access_control_max_age_sec = 600
-    origin_override = true
-  }
-
-  custom_headers_config {
-    items {
-      header   = "Cache-Control"
-      value    = "no-cache, no-store, must-revalidate"
-      override = true
-    }
-  }
-}
-
 # CloudFront Distribution (CDN for S3 Content Delivery)
 resource "aws_cloudfront_distribution" "cdn" {
   origin {
@@ -88,7 +59,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   # Default Cache Behavior (How CloudFront Handles Requests)
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"] # Add OPTIONS for CORS preflight
+    allowed_methods  = ["GET", "HEAD"] # Limit to read-only operations
     cached_methods   = ["GET", "HEAD"] # Cache GET and HEAD requests
     target_origin_id = "S3Origin"
 
@@ -97,18 +68,10 @@ resource "aws_cloudfront_distribution" "cdn" {
       cookies {
         forward = "none" # No cookies forwarded to S3
       }
-      headers = ["Access-Control-Request-Headers", "Access-Control-Request-Method", "Origin"] # CORS headers
+      headers = ["Cache-Control"] # Forward Cache-Control header for proper caching
     }
 
     viewer_protocol_policy = "redirect-to-https" # Always use HTTPS
-    
-    # Cache settings for PAC files
-    default_ttl = 0     # Don't cache by default
-    max_ttl     = 86400 # Maximum 1 day
-    min_ttl     = 0     # Minimum cache time
-    
-    # Attach CORS response headers policy
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
   # Geographic Restrictions (Restrict Access by Country if Needed)
